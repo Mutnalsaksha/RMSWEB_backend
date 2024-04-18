@@ -70,39 +70,64 @@ app.get('/events', async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
-
+// Route to retrieve all orders
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await OrderModel.find();
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 const orderSchema = new mongoose.Schema({
   name: String,
   phoneNumber:String,
   email:String,
   address:String,
-  persons: {type:String, required:true},
+  paymentType:String,
+  items: [{ name: String, quantity: Number, price: Number }]
 });
 const Order = mongoose.model('Order', orderSchema);
 
 
 // Route to handle order booking
 app.post('/orders/book-order', async (req, res) => {
-  console.log('Received request to book order:', req.body);
   try {
-    const { name, phoneNumber, email, address,  persons } = req.body;
-    console.log('Received request to book order:',req.boby);
+    const { name, phoneNumber, email, address,  paymentType, items } = req.body;
+
+    console.log('Received request to book order:', req.body);
+    
+    // Ensure items array is properly formatted in the request body
+    const newItems = items.map(item => {
+      console.log('Item name:', item.name); // Log each item's name
+      return{
+      name: item.name,
+      quantity: item.quantity,
+      price: item.price
+      };
+    });
+   
 
     const newOrder = new Order({
       name: name,
       phoneNumber: phoneNumber,
       email: email,
       address: address,
-      persons: persons,
-
+      paymentType: paymentType,
+      items: newItems // Use the formatted items array
     });
+    
+
+    console.log('Received request to book order:', req.body);
+
 
     console.log('New order before save:',newOrder);
     const bookedOrder = await newOrder.save();
     console.log('Order booked successfully:', bookedOrder);
-
-
+   
+    
 
     res.status(201).json(bookedOrder);
   } catch (error) {
@@ -133,5 +158,10 @@ app.get('/', (req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-  console.log('Server is running on port ${PORT}');
+  console.log(`Server is running on port ${PORT}`);
 });
+
+
+
+
+
